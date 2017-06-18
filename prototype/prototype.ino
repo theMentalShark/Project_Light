@@ -81,6 +81,7 @@ bool initPrc = true;
 int uiW = 320;
 int uiH = 180;
 int px, py;
+int highlightBoxSize = 3;
 
 
 void setup()
@@ -201,20 +202,22 @@ void loop() {
     tft.drawRect(p.y - 2 , tft.height() - p.x - 2, 5, 5, ILI9341_BLACK);
     delay(15);
     //clear previous box
-    for (int i = -2; i < 3; i++) {
-      for (int j = -2; j < 3; j++) {
-        int cx = px + i;
-        int cy = py + j;
-        if (cx > (tft.height() - uiH - 1)) {
-          float s = float(tft.height() - cx) / float(uiH);
-          float h = float(cy) / float(uiW) * 360;
-          //      Serial.print("r:"); Serial.print(r);
-          //      Serial.print("\tg:"); Serial.print(g);
-          //      Serial.print("\tb:"); Serial.print(b);
-          //      Serial.print("\ts:"); Serial.print(s);
-          //      Serial.print("\th:"); Serial.println(h);
-          setRGB(s, h, 1);
-          tft.drawPixel(cy, tft.height() - cx, tft.color565(targetR / 4, targetG / 4, targetB / 4));
+    for (int i = -highlightBoxSize; i <= highlightBoxSize; i++) {
+      for (int j = -highlightBoxSize; j <= highlightBoxSize; j++) {
+        if (((i == -highlightBoxSize) || ( i == -highlightBoxSize)) || ((i == -highlightBoxSize) || ( i == -highlightBoxSize))) {
+          int cx = px + i;
+          int cy = py + j;
+          if (cx > (tft.height() - uiH - 1)) {
+            float s = float(tft.height() - cx) / float(uiH);
+            float h = float(cy) / float(uiW) * 360;
+            //      Serial.print("r:"); Serial.print(r);
+            //      Serial.print("\tg:"); Serial.print(g);
+            //      Serial.print("\tb:"); Serial.print(b);
+            //      Serial.print("\ts:"); Serial.print(s);
+            //      Serial.print("\th:"); Serial.println(h);
+            setRGB(s, h, 1);
+            tft.drawPixel(cy, tft.height() - cx, tft.color565(targetR / 4, targetG / 4, targetB / 4));
+          }
         }
       }
     }
@@ -423,21 +426,21 @@ void setRGB(float s, float h, float v) {
 
 unsigned long drawRainbow(int x, int y, int width, int height) {
   tft.fillScreen(tft.color565(0, 0, 0));
-      for (int i = 0; i <= height; i++) {
-        for (int j = 0; j <= width; j++) {
-          float s = float(i) / float(height);
-          float h = float(j) / float(width) * 360;
-          //      Serial.print("r:"); Serial.print(r);
-          //      Serial.print("\tg:"); Serial.print(g);
-          //      Serial.print("\tb:"); Serial.print(b);
-          //      Serial.print("\ts:"); Serial.print(s);
-          //      Serial.print("\th:"); Serial.println(h);
-          setRGB(s, h, 1);
-          tft.drawPixel(j, i, tft.color565(scrR, scrG, scrB));
-          //      setColor();
-          //      delay(5);
-        }
-      }
+  for (int i = 0; i <= height; i++) {
+    for (int j = 0; j <= width; j++) {
+      float s = float(i) / float(height);
+      float h = float(j) / float(width) * 360;
+      //      Serial.print("r:"); Serial.print(r);
+      //      Serial.print("\tg:"); Serial.print(g);
+      //      Serial.print("\tb:"); Serial.print(b);
+      //      Serial.print("\ts:"); Serial.print(s);
+      //      Serial.print("\th:"); Serial.println(h);
+      setRGB(s, h, 1);
+      tft.drawPixel(j, i, tft.color565(scrR, scrG, scrB));
+      //      setColor();
+      //      delay(5);
+    }
+  }
   tft.setCursor(30, 205);
   tft.setTextColor(tft.color565(128, 128, 128));
   tft.setTextSize(3);
