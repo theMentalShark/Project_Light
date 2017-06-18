@@ -205,7 +205,7 @@ void loop() {
       for (int j = -2; j < 3; j++) {
         int cx = px + i;
         int cy = py + j;
-        if (cx > (tft.height() - uiH)) {
+        if (cx > (tft.height() - uiH - 1)) {
           float s = float(tft.height() - cx) / float(uiH);
           float h = float(cy) / float(uiW) * 360;
           //      Serial.print("r:"); Serial.print(r);
