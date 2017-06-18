@@ -199,12 +199,12 @@ void loop() {
 
   if (p.x > (tft.height() - uiH)) {
     //draw box
-    tft.drawRect(p.y - 2 , tft.height() - p.x - 2, 5, 5, ILI9341_BLACK);
+    tft.drawRect(p.y -  highlightBoxSize, tft.height() - p.x - highlightBoxSize, highlightBoxSize * 2 + 1, highlightBoxSize * 2 + 1, ILI9341_BLACK);
     delay(15);
     //clear previous box
     for (int i = -highlightBoxSize; i <= highlightBoxSize; i++) {
       for (int j = -highlightBoxSize; j <= highlightBoxSize; j++) {
-        if (((i == -highlightBoxSize) || ( i == -highlightBoxSize)) || ((i == -highlightBoxSize) || ( i == -highlightBoxSize))) {
+        if (((i == -highlightBoxSize) || ( i == highlightBoxSize)) || ((j == -highlightBoxSize) || ( j == highlightBoxSize))) {
           int cx = px + i;
           int cy = py + j;
           if (cx > (tft.height() - uiH - 1)) {
@@ -216,6 +216,7 @@ void loop() {
             //      Serial.print("\ts:"); Serial.print(s);
             //      Serial.print("\th:"); Serial.println(h);
             setRGB(s, h, 1);
+//            tft.drawPixel(cy, tft.height() - cx, tft.color565(255,255,255));
             tft.drawPixel(cy, tft.height() - cx, tft.color565(targetR / 4, targetG / 4, targetB / 4));
           }
         }
