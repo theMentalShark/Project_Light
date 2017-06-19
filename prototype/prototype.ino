@@ -48,7 +48,7 @@
 #define STMPE_CS PC7
 #define SD_CS    PC5
 #endif
-#define SAMPLE_SIZE 5
+#define SAMPLE_SIZE 10
 
 #if defined(ARDUINO_SAMD_ZERO) && defined(SERIAL_PORT_USBVIRTUAL)
 // Required for Serial on Zero based boards
@@ -258,26 +258,44 @@ void changeMode (int m) {
     tft.fillRect(282, 202, 26, 26, tft.color565(0, 0, 0));
     //draw white rect select box,
     tft.fillRect(126, 206, 18, 18, tft.color565(255, 255, 255));
-    tft.setCursor(30, 205);
+//    tft.setCursor(30, 205);
+//    tft.setTextColor(ILI9341_WHITE);
+//    tft.setTextSize(3);
+//    tft.println("MONO");
+//    tft.setCursor(175, 205);
+//    tft.setTextColor(tft.color565(128, 128, 128));
+//    tft.setTextSize(3);
+//    tft.println("RGB+W");
+//    
+    tft.setCursor(15, 210);
     tft.setTextColor(ILI9341_WHITE);
-    tft.setTextSize(3);
-    tft.println("MONO");
-    tft.setCursor(175, 205);
+    tft.setTextSize(2);
+    tft.println("BI-COLOR");
+    tft.setCursor(200, 210);
     tft.setTextColor(tft.color565(128, 128, 128));
-    tft.setTextSize(3);
+    tft.setTextSize(2);
     tft.println("RGB+W");
   } else {
     //draw black rect clear box,
     tft.fillRect(122, 202, 26, 26, tft.color565(0, 0, 0));
     //draw white rect select box,
     tft.fillRect(286, 206, 18, 18, tft.color565(255, 255, 255));
-    tft.setCursor(30, 205);
+//    tft.setCursor(30, 205);
+//    tft.setTextColor(tft.color565(128, 128, 128));
+//    tft.setTextSize(3);
+//    tft.println("MONO");
+//    tft.setCursor(175, 205);
+//    tft.setTextColor(ILI9341_WHITE);
+//    tft.setTextSize(3);
+//    tft.println("RGB+W");
+    
+    tft.setCursor(15, 210);
     tft.setTextColor(tft.color565(128, 128, 128));
-    tft.setTextSize(3);
-    tft.println("MONO");
-    tft.setCursor(175, 205);
+    tft.setTextSize(2);
+    tft.println("BI-COLOR");
+    tft.setCursor(200, 210);
     tft.setTextColor(ILI9341_WHITE);
-    tft.setTextSize(3);
+    tft.setTextSize(2);
     tft.println("RGB+W");
   }
   mode = m;
@@ -427,28 +445,28 @@ void setRGB(float s, float h, float v) {
 
 unsigned long drawRainbow(int x, int y, int width, int height) {
   tft.fillScreen(tft.color565(0, 0, 0));
-  for (int i = 0; i <= height; i++) {
-    for (int j = 0; j <= width; j++) {
-      float s = float(i) / float(height);
-      float h = float(j) / float(width) * 360;
-      //      Serial.print("r:"); Serial.print(r);
-      //      Serial.print("\tg:"); Serial.print(g);
-      //      Serial.print("\tb:"); Serial.print(b);
-      //      Serial.print("\ts:"); Serial.print(s);
-      //      Serial.print("\th:"); Serial.println(h);
-      setRGB(s, h, 1);
-      tft.drawPixel(j, i, tft.color565(scrR, scrG, scrB));
-      //      setColor();
-      //      delay(5);
-    }
-  }
-  tft.setCursor(30, 205);
+//  for (int i = 0; i <= height; i++) {
+//    for (int j = 0; j <= width; j++) {
+//      float s = float(i) / float(height);
+//      float h = float(j) / float(width) * 360;
+//      //      Serial.print("r:"); Serial.print(r);
+//      //      Serial.print("\tg:"); Serial.print(g);
+//      //      Serial.print("\tb:"); Serial.print(b);
+//      //      Serial.print("\ts:"); Serial.print(s);
+//      //      Serial.print("\th:"); Serial.println(h);
+//      setRGB(s, h, 1);
+//      tft.drawPixel(j, i, tft.color565(scrR, scrG, scrB));
+//      //      setColor();
+//      //      delay(5);
+//    }
+//  }
+  tft.setCursor(15, 210);
   tft.setTextColor(tft.color565(128, 128, 128));
-  tft.setTextSize(3);
-  tft.println("MONO");
-  tft.setCursor(175, 205);
+  tft.setTextSize(2);
+  tft.println("BI-COLOR");
+  tft.setCursor(200, 210);
   tft.setTextColor(ILI9341_WHITE);
-  tft.setTextSize(3);
+  tft.setTextSize(2);
   tft.println("RGB+W");
   tft.fillRect(120, 200, 30, 30, tft.color565(255, 255, 255));
   tft.fillRect(280, 200, 30, 30, tft.color565(255, 255, 255));
