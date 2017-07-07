@@ -14,6 +14,7 @@
 
 #include <Wire.h>      // this is needed even tho we aren't using it
 #include <SPI.h>
+#include <SD.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
 #include <Adafruit_STMPE610.h>
@@ -60,8 +61,8 @@ Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
 
 // This is calibration data for the raw touch data to the screen coordinates
 #define TS_MINX 3928
-#define TS_MAXX 191
-#define TS_MINY 184
+#define TS_MAXX 451
+#define TS_MINY 199
 #define TS_MAXY 3652
 
 int ledRes = 128;
@@ -93,6 +94,15 @@ void setup()
     while (1);
   }
   tft.begin();
+
+  yield();
+
+  Serial.print("Initializing SD card...");
+  if (!SD.begin(SD_CS)) {
+    Serial.println("failed!");
+  }
+  Serial.println("OK!");
+
 
 
   tft.setRotation(1);
@@ -182,8 +192,27 @@ void setup()
                     TCC_CTRLA_ENABLE;             // Enable the TCC0 output
   while (TCC0->SYNCBUSY.bit.ENABLE);              // Wait for synchronization
 
-  drawRainbow(0, 0, uiW, uiH);
+  bmpDraw("color.bmp", 0, 0);
+  //drawRainbow(0, 0, uiW, uiH);
+  drawUI();
   initPrc = false;
+}
+
+void drawUI () {
+  tft.setCursor(15, 210);
+  tft.setTextColor(tft.color565(128, 128, 128));
+  tft.setTextSize(2);
+  tft.println("BI-COLOR");
+  tft.setCursor(200, 210);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setTextSize(2);
+  tft.println("RGB+W");
+  tft.fillRect(120, 200, 30, 30, tft.color565(255, 255, 255));
+  tft.fillRect(280, 200, 30, 30, tft.color565(255, 255, 255));
+  tft.fillRect(122, 202, 26, 26, tft.color565(0, 0, 0));
+  tft.fillRect(282, 202, 26, 26, tft.color565(0, 0, 0));
+  //  tft.fillRect(126, 206, 18, 18, tft.color565(255, 255, 255));
+  tft.fillRect(286, 206, 18, 18, tft.color565(255, 255, 255));
 }
 
 
@@ -196,7 +225,6 @@ void loop() {
   p.x = map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
   p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
 
-
   if (p.x > (tft.height() - uiH)) {
     //draw box
     tft.drawRect(p.y -  highlightBoxSize, tft.height() - p.x - highlightBoxSize, highlightBoxSize * 2 + 1, highlightBoxSize * 2 + 1, ILI9341_BLACK);
@@ -208,25 +236,35 @@ void loop() {
           int cx = px + i;
           int cy = py + j;
           if (cx > (tft.height() - uiH - 1)) {
-            float s = float(tft.height() - cx) / float(uiH);
-            float h = float(cy) / float(uiW) * 360;
-            //      Serial.print("r:"); Serial.print(r);
-            //      Serial.print("\tg:"); Serial.print(g);
-            //      Serial.print("\tb:"); Serial.print(b);
-            //      Serial.print("\ts:"); Serial.print(s);
-            //      Serial.print("\th:"); Serial.println(h);
-            setRGB(s, h, 1);
-//            tft.drawPixel(cy, tft.height() - cx, tft.color565(255,255,255));
-            tft.drawPixel(cy, tft.height() - cx, tft.color565(targetR / 4, targetG / 4, targetB / 4));
+            if (mode == 0) {
+              float s = float(tft.height() - cx) / float(uiH);
+              float h = float(cy) / float(uiW) * 360;
+              //      Serial.print("r:"); Serial.print(r);
+              //      Serial.print("\tg:"); Serial.print(g);
+              //      Serial.print("\tb:"); Serial.print(b);
+              //      Serial.print("\ts:"); Serial.print(s);
+              //      Serial.print("\th:"); Serial.println(h);
+
+              setRGB(s, h, 1);
+              //            tft.drawPixel(cy, tft.height() - cx, tft.color565(255,255,255));
+
+              tft.drawPixel(cy, tft.height() - cx, tft.color565(targetR / 4, targetG / 4, targetB / 4));
+            } else {
+              int biColorR = int(map(cy, 0, uiW, 255, 201));
+              int biColorG = int(map(cy, 0, uiW, 197, 226));
+              int biColorB = int(map(cy, 0, uiW, 143, 255));
+              tft.drawPixel(cy, tft.height() - cx, tft.color565(biColorR, biColorG, biColorB));
+            }
           }
         }
       }
     }
+
     //save pervious pos
     px = p.x;
     py = p.y;
   }
-  float brightness = float(knobValB) / float(1023);
+  //float brightness = float(knobValB) / float(1023);
   if (p.x < (tft.height() - uiH) - 20) {
     Serial.println("mode change");
     if (p.y > (tft.height() / 2)) {
@@ -236,37 +274,71 @@ void loop() {
     }
   }
   if (mode == 1) {
+    float temp = float(p.y) / float(uiW);
     int totalBrightness = knobValA;
-    targetW = targetR = totalBrightness * brightness;
-    targetG = targetB = totalBrightness * (1 - brightness);
-    Serial.print("total brightness: ");
-    Serial.print(totalBrightness);
-    Serial.print("\tbrightness: ");
-    Serial.println(brightness);
+    targetW = targetR = totalBrightness * (1 - temp);
+    targetG = targetB = totalBrightness * (temp);
   } else {
-    targetW = knobValA;
-    float saturation = float(tft.height() - max(p.x, (tft.height() - uiH))) / float(uiH);
+    int totalBrightness = knobValA;
+    float colorRatio = float(240 - p.x) / float(uiH);
     float hue = float(p.y) / float(uiW) * 360;
-    setRGB(saturation, hue, brightness);
+    setRGB(1, hue, (colorRatio));
+    targetW = int(totalBrightness * (1 - colorRatio));
+    norTarget();
+    targetR = map(targetR, 0, 1023, 0, totalBrightness);
+    targetG = map(targetG, 0, 1023, 0, totalBrightness);
+    targetB = map(targetB, 0, 1023, 0, totalBrightness);
+    Serial.println(p.x);
+
+    //    targetW = knobValA;
+    //    float saturation = float(tft.height() - max(p.x, (tft.height() - uiH))) / float(uiH);
+    //    float hue = float(p.y) / float(uiW) * 360;
+    //    setRGB(saturation, hue, brightness);
   }
   setColor();
 }
 
+void norTarget() {
+  targetR = max(targetR, 0);
+  targetR = min(targetR, 1024);
+  targetG = max(targetG, 0);
+  targetG = min(targetG, 1024);
+  targetB = max(targetB, 0);
+  targetB = min(targetB, 1024);
+  targetW = max(targetW, 0);
+  targetW = min(targetW, 1024);
+}
+
+void setBiRGB() {
+
+}
+
 void changeMode (int m) {
+  if (mode == m) {
+    return;
+  }
+
+  tft.fillScreen(ILI9341_BLACK);
   if (m == 1) {
+    bmpDraw("bicolor.bmp", 0, 0);
     //draw black rect clear box,
+
+    tft.fillRect(120, 200, 30, 30, tft.color565(255, 255, 255));
+    tft.fillRect(280, 200, 30, 30, tft.color565(255, 255, 255));
+    tft.fillRect(122, 202, 26, 26, tft.color565(0, 0, 0));
+    tft.fillRect(282, 202, 26, 26, tft.color565(0, 0, 0));
     tft.fillRect(282, 202, 26, 26, tft.color565(0, 0, 0));
     //draw white rect select box,
     tft.fillRect(126, 206, 18, 18, tft.color565(255, 255, 255));
-//    tft.setCursor(30, 205);
-//    tft.setTextColor(ILI9341_WHITE);
-//    tft.setTextSize(3);
-//    tft.println("MONO");
-//    tft.setCursor(175, 205);
-//    tft.setTextColor(tft.color565(128, 128, 128));
-//    tft.setTextSize(3);
-//    tft.println("RGB+W");
-//    
+    //    tft.setCursor(30, 205);
+    //    tft.setTextColor(ILI9341_WHITE);
+    //    tft.setTextSize(3);
+    //    tft.println("MONO");
+    //    tft.setCursor(175, 205);
+    //    tft.setTextColor(tft.color565(128, 128, 128));
+    //    tft.setTextSize(3);
+    //    tft.println("RGB+W");
+    //
     tft.setCursor(15, 210);
     tft.setTextColor(ILI9341_WHITE);
     tft.setTextSize(2);
@@ -276,19 +348,25 @@ void changeMode (int m) {
     tft.setTextSize(2);
     tft.println("RGB+W");
   } else {
+    bmpDraw("color.bmp", 0, 0);
+
+    tft.fillRect(120, 200, 30, 30, tft.color565(255, 255, 255));
+    tft.fillRect(280, 200, 30, 30, tft.color565(255, 255, 255));
+    tft.fillRect(122, 202, 26, 26, tft.color565(0, 0, 0));
+    tft.fillRect(282, 202, 26, 26, tft.color565(0, 0, 0));
     //draw black rect clear box,
     tft.fillRect(122, 202, 26, 26, tft.color565(0, 0, 0));
     //draw white rect select box,
     tft.fillRect(286, 206, 18, 18, tft.color565(255, 255, 255));
-//    tft.setCursor(30, 205);
-//    tft.setTextColor(tft.color565(128, 128, 128));
-//    tft.setTextSize(3);
-//    tft.println("MONO");
-//    tft.setCursor(175, 205);
-//    tft.setTextColor(ILI9341_WHITE);
-//    tft.setTextSize(3);
-//    tft.println("RGB+W");
-    
+    //    tft.setCursor(30, 205);
+    //    tft.setTextColor(tft.color565(128, 128, 128));
+    //    tft.setTextSize(3);
+    //    tft.println("MONO");
+    //    tft.setCursor(175, 205);
+    //    tft.setTextColor(ILI9341_WHITE);
+    //    tft.setTextSize(3);
+    //    tft.println("RGB+W");
+
     tft.setCursor(15, 210);
     tft.setTextColor(tft.color565(128, 128, 128));
     tft.setTextSize(2);
@@ -298,6 +376,13 @@ void changeMode (int m) {
     tft.setTextSize(2);
     tft.println("RGB+W");
   }
+  //
+  //  tft.fillRect(120, 200, 30, 30, tft.color565(255, 255, 255));
+  //  tft.fillRect(280, 200, 30, 30, tft.color565(255, 255, 255));
+  //  tft.fillRect(122, 202, 26, 26, tft.color565(0, 0, 0));
+  //  tft.fillRect(282, 202, 26, 26, tft.color565(0, 0, 0));
+  //  //  tft.fillRect(126, 206, 18, 18, tft.color565(255, 255, 255));
+  //  tft.fillRect(286, 206, 18, 18, tft.color565(255, 255, 255));
   mode = m;
 }
 
@@ -460,20 +545,146 @@ unsigned long drawRainbow(int x, int y, int width, int height) {
       //      delay(5);
     }
   }
-  tft.setCursor(15, 210);
-  tft.setTextColor(tft.color565(128, 128, 128));
-  tft.setTextSize(2);
-  tft.println("BI-COLOR");
-  tft.setCursor(200, 210);
-  tft.setTextColor(ILI9341_WHITE);
-  tft.setTextSize(2);
-  tft.println("RGB+W");
-  tft.fillRect(120, 200, 30, 30, tft.color565(255, 255, 255));
-  tft.fillRect(280, 200, 30, 30, tft.color565(255, 255, 255));
-  tft.fillRect(122, 202, 26, 26, tft.color565(0, 0, 0));
-  tft.fillRect(282, 202, 26, 26, tft.color565(0, 0, 0));
-  //  tft.fillRect(126, 206, 18, 18, tft.color565(255, 255, 255));
-  tft.fillRect(286, 206, 18, 18, tft.color565(255, 255, 255));
 }
 
+
+// This function opens a Windows Bitmap (BMP) file and
+// displays it at the given coordinates.  It's sped up
+// by reading many pixels worth of data at a time
+// (rather than pixel by pixel).  Increasing the buffer
+// size takes more of the Arduino's precious RAM but
+// makes loading a little faster.  20 pixels seems a
+// good balance.
+
+#define BUFFPIXEL 10
+
+void bmpDraw(char *filename, uint8_t x, uint16_t y) {
+
+  File     bmpFile;
+  int      bmpWidth, bmpHeight;   // W+H in pixels
+  uint8_t  bmpDepth;              // Bit depth (currently must be 24)
+  uint32_t bmpImageoffset;        // Start of image data in file
+  uint32_t rowSize;               // Not always = bmpWidth; may have padding
+  uint8_t  sdbuffer[3 * BUFFPIXEL]; // pixel buffer (R+G+B per pixel)
+  uint8_t  buffidx = sizeof(sdbuffer); // Current position in sdbuffer
+  boolean  goodBmp = false;       // Set to true on valid header parse
+  boolean  flip    = true;        // BMP is stored bottom-to-top
+  int      w, h, row, col;
+  uint8_t  r, g, b;
+  uint32_t pos = 0, startTime = millis();
+
+  if ((x >= tft.width()) || (y >= tft.height())) return;
+
+  Serial.println();
+  Serial.print(F("Loading image '"));
+  Serial.print(filename);
+  Serial.println('\'');
+
+  // Open requested file on SD card
+  if ((bmpFile = SD.open(filename)) == NULL) {
+    Serial.print(F("File not found"));
+    return;
+  }
+
+  // Parse BMP header
+  if (read16(bmpFile) == 0x4D42) { // BMP signature
+    Serial.print(F("File size: ")); Serial.println(read32(bmpFile));
+    (void)read32(bmpFile); // Read & ignore creator bytes
+    bmpImageoffset = read32(bmpFile); // Start of image data
+    Serial.print(F("Image Offset: ")); Serial.println(bmpImageoffset, DEC);
+    // Read DIB header
+    Serial.print(F("Header size: ")); Serial.println(read32(bmpFile));
+    bmpWidth  = read32(bmpFile);
+    bmpHeight = read32(bmpFile);
+    if (read16(bmpFile) == 1) { // # planes -- must be '1'
+      bmpDepth = read16(bmpFile); // bits per pixel
+      Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
+      if ((bmpDepth == 24) && (read32(bmpFile) == 0)) { // 0 = uncompressed
+
+        goodBmp = true; // Supported BMP format -- proceed!
+        Serial.print(F("Image size: "));
+        Serial.print(bmpWidth);
+        Serial.print('x');
+        Serial.println(bmpHeight);
+
+        // BMP rows are padded (if needed) to 4-byte boundary
+        rowSize = (bmpWidth * 3 + 3) & ~3;
+
+        // If bmpHeight is negative, image is in top-down order.
+        // This is not canon but has been observed in the wild.
+        if (bmpHeight < 0) {
+          bmpHeight = -bmpHeight;
+          flip      = false;
+        }
+
+        // Crop area to be loaded
+        w = bmpWidth;
+        h = bmpHeight;
+        if ((x + w - 1) >= tft.width())  w = tft.width()  - x;
+        if ((y + h - 1) >= tft.height()) h = tft.height() - y;
+
+        // Set TFT address window to clipped image bounds
+        tft.setAddrWindow(x, y, x + w - 1, y + h - 1);
+
+        for (row = 0; row < h; row++) { // For each scanline...
+
+          // Seek to start of scan line.  It might seem labor-
+          // intensive to be doing this on every line, but this
+          // method covers a lot of gritty details like cropping
+          // and scanline padding.  Also, the seek only takes
+          // place if the file position actually needs to change
+          // (avoids a lot of cluster math in SD library).
+          if (flip) // Bitmap is stored bottom-to-top order (normal BMP)
+            pos = bmpImageoffset + (bmpHeight - 1 - row) * rowSize;
+          else     // Bitmap is stored top-to-bottom
+            pos = bmpImageoffset + row * rowSize;
+          if (bmpFile.position() != pos) { // Need seek?
+            bmpFile.seek(pos);
+            buffidx = sizeof(sdbuffer); // Force buffer reload
+          }
+
+          for (col = 0; col < w; col++) { // For each pixel...
+            // Time to read more pixel data?
+            if (buffidx >= sizeof(sdbuffer)) { // Indeed
+              bmpFile.read(sdbuffer, sizeof(sdbuffer));
+              buffidx = 0; // Set index to beginning
+            }
+
+            // Convert pixel from BMP to TFT format, push to display
+            b = sdbuffer[buffidx++];
+            g = sdbuffer[buffidx++];
+            r = sdbuffer[buffidx++];
+            tft.pushColor(tft.color565(r, g, b));
+          } // end pixel
+        } // end scanline
+        Serial.print(F("Loaded in "));
+        Serial.print(millis() - startTime);
+        Serial.println(" ms");
+      } // end goodBmp
+    }
+  }
+
+  bmpFile.close();
+  if (!goodBmp) Serial.println(F("BMP format not recognized."));
+}
+
+// These read 16- and 32-bit types from the SD card file.
+// BMP data is stored little-endian, Arduino is little-endian too.
+// May need to reverse subscript order if porting elsewhere.
+
+uint16_t read16(File &f) {
+  uint16_t result;
+  ((uint8_t *)&result)[0] = f.read(); // LSB
+  ((uint8_t *)&result)[1] = f.read(); // MSB
+  return result;
+}
+
+uint32_t read32(File &f) {
+  uint32_t result;
+  ((uint8_t *)&result)[0] = f.read(); // LSB
+  ((uint8_t *)&result)[1] = f.read();
+  ((uint8_t *)&result)[2] = f.read();
+  ((uint8_t *)&result)[3] = f.read(); // MSB
+  return result;
+}
 
