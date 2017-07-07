@@ -61,10 +61,10 @@ Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
 // This is calibration data for the raw touch data to the screen coordinates
 #define TS_MINX 3928
 #define TS_MAXX 191
-#define TS_MINY 154
-#define TS_MAXY 3852
+#define TS_MINY 184
+#define TS_MAXY 3652
 
-int ledRes = 3000;
+int ledRes = 128;
 int knobPinA = A0;
 int knobPinB = A1;
 int mode = 0;         //mode 0 for rgb+2, mode 1 for dual tone white;
@@ -445,21 +445,21 @@ void setRGB(float s, float h, float v) {
 
 unsigned long drawRainbow(int x, int y, int width, int height) {
   tft.fillScreen(tft.color565(0, 0, 0));
-//  for (int i = 0; i <= height; i++) {
-//    for (int j = 0; j <= width; j++) {
-//      float s = float(i) / float(height);
-//      float h = float(j) / float(width) * 360;
-//      //      Serial.print("r:"); Serial.print(r);
-//      //      Serial.print("\tg:"); Serial.print(g);
-//      //      Serial.print("\tb:"); Serial.print(b);
-//      //      Serial.print("\ts:"); Serial.print(s);
-//      //      Serial.print("\th:"); Serial.println(h);
-//      setRGB(s, h, 1);
-//      tft.drawPixel(j, i, tft.color565(scrR, scrG, scrB));
-//      //      setColor();
-//      //      delay(5);
-//    }
-//  }
+  for (int i = 0; i <= height; i++) {
+    for (int j = 0; j <= width; j++) {
+      float s = float(i) / float(height);
+      float h = float(j) / float(width) * 360;
+      //      Serial.print("r:"); Serial.print(r);
+      //      Serial.print("\tg:"); Serial.print(g);
+      //      Serial.print("\tb:"); Serial.print(b);
+      //      Serial.print("\ts:"); Serial.print(s);
+      //      Serial.print("\th:"); Serial.println(h);
+      setRGB(s, h, 1);
+      tft.drawPixel(j, i, tft.color565(scrR, scrG, scrB));
+      //      setColor();
+      //      delay(5);
+    }
+  }
   tft.setCursor(15, 210);
   tft.setTextColor(tft.color565(128, 128, 128));
   tft.setTextSize(2);
